@@ -1,4 +1,6 @@
 """
+Copyright (c) 2011 Justin Bruce Van Horne
+
 Python-Markdown LaTeX Extension
 ===============================
 

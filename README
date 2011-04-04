@@ -1,5 +1,11 @@
 This Markdown extension adds support for inline LaTeX expressions.
 
+Dependencies:
+=============
+latex
+dvipng
+python markdown
+
 Installation:
 =============
 You can either copy it into the extensions sub-directory in your markdown folder (ex: /usr/lib/python2.7/site-packages/markdown/extensions/latex.py) or use it locally with the mdx_ prefix. See: http://www.freewisdom.org/projects/python-markdown/Writing_Extensions for more details.
