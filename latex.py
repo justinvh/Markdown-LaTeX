@@ -21,11 +21,6 @@ import base64
 import tempfile
 
 
-def zip2(a, b, xs):
-    """Like zip, but for two arguments"""
-    return [(a, b, x) for x in xs]
-
-
 TEX_MODE = re.compile(r'\%(.+?)\%', re.MULTILINE | re.DOTALL)
 MATH_MODE = re.compile(r'\$(.+?)\$', re.MULTILINE | re.DOTALL)
 IMG_EXPR = "<img class='latex-inline math-%s' id='%s'" + \
@@ -98,8 +93,8 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         page = "\n".join(lines)
 
         # Figure out our text strings and math-mode strings
-        tex_expr = zip2(TEX_MODE, False, TEX_MODE.findall(page))
-        tex_expr += zip2(MATH_MODE, True, MATH_MODE.findall(page))
+        tex_expr = [(TEX_MODE, False, x) for x in TEX_MODE.findall(page)]
+        tex_expr += [(MATH_MODE, True, x) for x in MATH_MODE.findall(page)]
 
         # Parse the expressions
         new_cache = {}
