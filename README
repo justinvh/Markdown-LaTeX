@@ -1,0 +1,25 @@
+This Markdown extension adds support for inline LaTeX expressions.
+
+Installation:
+=============
+You can either copy it into the extensions sub-directory in your markdown folder (ex: /usr/lib/python2.7/site-packages/markdown/extensions/latex.py) or use it locally with the mdx_ prefix. See: http://www.freewisdom.org/projects/python-markdown/Writing_Extensions for more details.
+
+Usage:
+======
+markdown -x latex somefile.markdown
+
+How does it work?
+=================
+The LaTex extension will search for either $text$ or %text% expressions. For each expression, it generates a tex file that is parsed by latex and then run through dvipng. The data is encoded via base64 and then inlined.
+
+A cache file (latex.cache) is used to store all expressions and their base64 counterparts. This is to prevent latex from being run each time.
+
+Examples:
+=========
+%Hello, world, this just regular text.%
+$y = mx + b$
+
+Questions:
+=========
+Why not just a %mode% and just use %$text$% instead of two separate modes?
+A: I don't know. You're free to change it to fit your needs though.
