@@ -23,7 +23,8 @@ import tempfile
 
 TEX_MODE = re.compile(r'\%(.+?)\%', re.MULTILINE | re.DOTALL)
 MATH_MODE = re.compile(r'\$(.+?)\$', re.MULTILINE | re.DOTALL)
-IMG_EXPR = "<img class='latex-inline math-%s' id='%s'" + \
+PREAMBLE_MODE = re.compile(r'\%\%(.+?)\%\%', re.MULTILINE | re.DOTALL)
+IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
         " src='data:image/png;base64,%s'>"
 
 
@@ -37,8 +38,9 @@ tex_preamble = r""" \documentclass{article}
                     \usepackage{amsthm}
                     \usepackage{amssymb}
                     \usepackage{bm}
+                    \usepackage[usenames,dvipsnames]{color}
                     \pagestyle{empty}
-                    \begin{document}"""
+                    """
 
 
 class TeXPreprocessor(markdown.preprocessors.Preprocessor):
@@ -62,7 +64,7 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         tmp_file.close()
 
         # compile LaTeX document. A DVI file is created
-        os.popen('latex %s' % path)
+        os.popen('latex %s >& latex.log' % path)
 
         # Run dvipng on the generated DVI file. Use tight bounding box.
         # Magnification is set to 1200
@@ -70,8 +72,8 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         png = "%s.png" % path
 
         # Extract the image
-        cmd = "dvipng -T tight -x 1200 -z 9 -bg transparent \
-                %s -o %s" % (dvi, png)
+        cmd = "dvipng -T tight -x 1200 -z 9 \
+                %s -o %s >& dvipng.log" % (dvi, png)
         os.popen(cmd)
 
         # Read the png and encode the data
@@ -91,6 +93,14 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         """Parses the actual page"""
         # Re-creates the entire page so we can parse in a multine env.
         page = "\n".join(lines)
+        global tex_preamble
+
+        # Adds a preamble mode
+        preambles = PREAMBLE_MODE.findall(page)
+        for preamble in preambles:
+            tex_preamble += preamble + "\n"
+            page = PREAMBLE_MODE.sub("", page, 1)
+        tex_preamble += "\\begin{document}"
 
         # Figure out our text strings and math-mode strings
         tex_expr = [(TEX_MODE, False, x) for x in TEX_MODE.findall(page)]
@@ -105,8 +115,10 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
             else:
                 data = self._tex_to_base64(expr, math_mode)
                 new_cache[simp_expr] = data
+            expr = expr.replace('"', "").replace("'", "")
             page = reg.sub(IMG_EXPR %
-                    (str(math_mode).lower(), simp_expr[:15], data), page, 1)
+                    (str(math_mode).lower(), expr, simp_expr[:15], data), 
+                    page, 1)
 
         # Cache our data
         cache_file = open('latex.cache', 'a')

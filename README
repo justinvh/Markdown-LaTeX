@@ -1,4 +1,9 @@
 This Markdown extension adds support for inline LaTeX expressions.
+Modes:
+============
+Text Mode: %Some text%
+Math Mode: $Math Mode$
+Preamble Mode: %% Preamble mode %%
 
 Dependencies:
 =============
