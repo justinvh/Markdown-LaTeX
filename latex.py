@@ -21,9 +21,9 @@ import base64
 import tempfile
 
 
-TEX_MODE = re.compile(r'\%(.+?)\%', re.MULTILINE | re.DOTALL)
-MATH_MODE = re.compile(r'\$(.+?)\$', re.MULTILINE | re.DOTALL)
-PREAMBLE_MODE = re.compile(r'\%\%(.+?)\%\%', re.MULTILINE | re.DOTALL)
+TEX_MODE = re.compile(r'(?=(?<!\\)\%).(.+?)(?<!\\)\%', re.MULTILINE | re.DOTALL)
+MATH_MODE = re.compile(r'(?=(?<!\\)\$).(.+?)(?<!\\)\$', re.MULTILINE | re.DOTALL)
+PREAMBLE_MODE = re.compile(r'(?=(?<!\\)\%\%).(.+?)(?<!\\)\%\%', re.MULTILINE | re.DOTALL)
 IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
         " src='data:image/png;base64,%s'>"
 
@@ -53,6 +53,7 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         descriptor, path = tempfile.mkstemp()
         tmp_file = os.fdopen(descriptor, "w")
         tmp_file.write(tex_preamble)
+
 
         # Figure out the mode that we're in
         if math_mode:
