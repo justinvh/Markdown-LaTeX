@@ -118,8 +118,8 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
                 new_cache[simp_expr] = data
             expr = expr.replace('"', "").replace("'", "")
             page = reg.sub(IMG_EXPR %
-                    (str(math_mode).lower(), expr, simp_expr[:15], data), 
-                    page, 1)
+                    (str(math_mode).lower(), re.escape(expr), 
+                        simp_expr[:15], data), page, 1)
 
         # Cache our data
         cache_file = open('latex.cache', 'a')
