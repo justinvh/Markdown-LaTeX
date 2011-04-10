@@ -19,7 +19,7 @@ import os
 import string
 import base64
 import tempfile
-
+from subprocess import call, PIPE
 
 TEX_MODE = re.compile(r'(?=(?<!\\)\%).(.+?)(?<!\\)\%', re.MULTILINE | re.DOTALL)
 MATH_MODE = re.compile(r'(?=(?<!\\)\$).(.+?)(?<!\\)\$', re.MULTILINE | re.DOTALL)
@@ -49,9 +49,9 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
     def _tex_to_base64(self, tex, math_mode):
         """Generates a base64 representation of TeX string"""
         # Generate the temporary file
-        tempfile.tempdir = "./"
-        descriptor, path = tempfile.mkstemp()
-        tmp_file = os.fdopen(descriptor, "w")
+    	tempfile.tempdir = "./"
+        path = tempfile.mktemp()
+        tmp_file = open(path, "w")
         tmp_file.write(tex_preamble)
 
 
@@ -65,7 +65,12 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         tmp_file.close()
 
         # compile LaTeX document. A DVI file is created
-        os.popen('latex %s >& latex.log' % path)
+        status = call(('latex %s' % path).split(), stdout=PIPE)
+        
+        # clean up if the above failed
+        if status:
+            self._cleanup(path, err=True)
+            raise Exception("Couldn't compile LaTeX document")
 
         # Run dvipng on the generated DVI file. Use tight bounding box.
         # Magnification is set to 1200
@@ -74,8 +79,13 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
 
         # Extract the image
         cmd = "dvipng -T tight -x 1200 -z 9 \
-                %s -o %s >& dvipng.log" % (dvi, png)
-        os.popen(cmd)
+                %s -o %s" % (dvi, png)
+        status = call(cmd.split(), stdout=PIPE)
+
+        # clean up if we couldn't make the above work
+        if status:
+            self._cleanup(path, err=True)
+            raise Exception("Couldn't convert LaTeX to image")
 
         # Read the png and encode the data
         png = open(png, "rb")
@@ -83,12 +93,19 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         data = base64.b64encode(data)
         png.close()
 
-        # Remove all the temporary files
-        tmp_files = ["%s%s" % (path, x)
-                for x in ["", ".log", ".aux", ".dvi", ".png"]]
-        map(lambda x: os.remove(x), tmp_files)
+    	self._cleanup(path)
 
         return data
+
+    def _cleanup(self, path, err=False):
+        # don't clean up the log if there's an error
+        if err: extensions = ["", ".aux", ".dvi", ".png"]
+        else: extensions = ["", ".log", ".aux", ".dvi", ".png"]
+
+        # now do the actual cleanup, passing on non-existent files
+        for extension in extensions:
+            try: os.remove("%s%s" % (path, extension))
+            except IOError: pass
 
     def run(self, lines):
         """Parses the actual page"""
