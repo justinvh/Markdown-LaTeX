@@ -13,3 +13,4 @@ $
 
 
 - Or even: $y = mx + b$
+- Or even: $e^{\imath x} = \cos{x} + \imath\sin{x}$
