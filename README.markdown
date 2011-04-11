@@ -29,10 +29,7 @@ You can either copy it into the extensions sub-directory in your markdown folder
 ----
 
 ## How does it work?
-The LaTex extension will search for either $text$ or %text% expressions. For each expression, it generates a tex file that is parsed by latex and then run through dvipng. The data is encoded via base64 and then inlined.
-
-
-A cache file (latex.cache) is used to store all expressions and their base64 counterparts. This is to prevent latex from being run each time.
+The LaTex extension will search for either $text$ or %text% expressions. For each expression, it generates a tex file that is parsed by latex and then run through dvipng. The data is encoded via base64 and then inlined.  A cache file (latex.cache) is used to store all expressions and their base64 counterparts. This is to prevent latex from being run each time.
 
 ----
 

@@ -81,7 +81,6 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         cmd = "dvipng -T tight -x 1200 -z 9 \
                 %s -o %s" % (dvi, png)
         status = call(cmd.split(), stdout=PIPE)
-        print status
 
         # clean up if we couldn't make the above work
         if status:
@@ -106,8 +105,7 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         # now do the actual cleanup, passing on non-existent files
         for extension in extensions:
             try: os.remove("%s%s" % (path, extension))
-            except IOError: pass
-            except OSError: pass
+            except (IOError, OSError): pass
 
     def run(self, lines):
         """Parses the actual page"""
