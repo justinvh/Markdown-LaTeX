@@ -34,9 +34,6 @@ The LaTex extension will search for either $text$ or %text% expressions. For eac
 
 A cache file (latex.cache) is used to store all expressions and their base64 counterparts. This is to prevent latex from being run each time.
 
-## Issues
-If you screw up the LaTeX in the document, chances are you are going to get a funny output or even nothing at all. This is due to the way LaTeX handles errors. For the most part hitting "q" at a broken terminal and then consulting the resulting logfile is your best bet for sanity.
-
 ----
 
 ## Thanks to:

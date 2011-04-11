@@ -65,12 +65,12 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         tmp_file.close()
 
         # compile LaTeX document. A DVI file is created
-        status = call(('latex %s' % path).split(), stdout=PIPE)
+        status = call(('latex -halt-on-error %s' % path).split(), stdout=PIPE)
         
         # clean up if the above failed
         if status:
             self._cleanup(path, err=True)
-            raise Exception("Couldn't compile LaTeX document")
+            raise Exception("Couldn't compile LaTeX document. Please read '%s.log' for more detail." % path)
 
         # Run dvipng on the generated DVI file. Use tight bounding box.
         # Magnification is set to 1200
@@ -81,11 +81,12 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         cmd = "dvipng -T tight -x 1200 -z 9 \
                 %s -o %s" % (dvi, png)
         status = call(cmd.split(), stdout=PIPE)
+        print status
 
         # clean up if we couldn't make the above work
         if status:
             self._cleanup(path, err=True)
-            raise Exception("Couldn't convert LaTeX to image")
+            raise Exception("Couldn't convert LaTeX to image. Please read '%s.log' for more detail." % path)
 
         # Read the png and encode the data
         png = open(png, "rb")
@@ -106,6 +107,7 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         for extension in extensions:
             try: os.remove("%s%s" % (path, extension))
             except IOError: pass
+            except OSError: pass
 
     def run(self, lines):
         """Parses the actual page"""
