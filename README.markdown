@@ -15,9 +15,10 @@ Preamble mode is the only "complex" mode. It allows you to add to the preamble o
 
 ## Dependencies
 Markdown-LaTeX depends on:
-- LaTeX
-- dvipng
-- Python Markdown
+
+- [LaTeX](http://www.latex-project.org/)
+- [dvipng](http://sourceforge.net/projects/dvipng/)
+- [Python Markdown](http://www.freewisdom.org/projects/python-markdown/)
 
 ## Installation
 You can either copy it into the extensions sub-directory in your markdown folder (ex: /usr/lib/python2.7/site-packages/markdown/extensions/latex.py) or use it locally with the mdx_ prefix. See [Markdown Extensions](http://www.freewisdom.org/projects/python-markdown/Writing_Extensions) for more details.
