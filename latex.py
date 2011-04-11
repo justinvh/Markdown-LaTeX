@@ -4,7 +4,6 @@ Copyright (c) 2011 Justin Bruce Van Horne
 Python-Markdown LaTeX Extension
 ===============================
 
-/bin/bash: :28: command not found
 Adds support for $math mode$ and %text mode%. This plugin supports
 multiline equations/text.
 
