@@ -13,14 +13,18 @@ It encodes data as base64 so there is no need for images directly.
 All the work is done in the preprocessor.
 """
 
-import markdown
 import re
 import os
 import string
 import base64
 import tempfile
+import markdown
+
+
 from subprocess import call, PIPE
 
+
+# Our various mode flavors
 TEX_MODE = re.compile(r'(?=(?<!\\)\%).(.+?)(?<!\\)\%', re.MULTILINE | re.DOTALL)
 MATH_MODE = re.compile(r'(?=(?<!\\)\$).(.+?)(?<!\\)\$', re.MULTILINE | re.DOTALL)
 PREAMBLE_MODE = re.compile(r'(?=(?<!\\)\%\%).(.+?)(?<!\\)\%\%', re.MULTILINE | re.DOTALL)
@@ -28,32 +32,38 @@ IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
         " src='data:image/png;base64,%s'>"
 
 
-# These are our cached expressions that are stored in latex.cache
-cached = {}
+class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
+    # These are our cached expressions that are stored in latex.cache
+    cached = {}
 
-
-# Basic LaTex Setup as well as our list of expressions to parse
-tex_preamble = r""" \documentclass{article}
-                    \usepackage{amsmath}
-                    \usepackage{amsthm}
-                    \usepackage{amssymb}
-                    \usepackage{bm}
-                    \usepackage[usenames,dvipsnames]{color}
-                    \pagestyle{empty}
+    # Basic LaTex Setup as well as our list of expressions to parse
+    tex_preamble = r""" \documentclass{article}
+                        \usepackage{amsmath}
+                        \usepackage{amsthm}
+                        \usepackage{amssymb}
+                        \usepackage{bm}
+                        \usepackage[usenames,dvipsnames]{color}
+                        \pagestyle{empty}
                     """
 
+    def __init__(self, configs):
+        try:
+            cache_file = open('latex.cache', 'r+')
+            for line in cache_file.readlines():
+                key, val = line.strip("\n").split(" ")
+                self.cached[key] = val
+        except IOError:
+            pass
 
-class TeXPreprocessor(markdown.preprocessors.Preprocessor):
     """The TeX preprocessor has to run prior to all the actual processing
     and can not be parsed in block mode very sanely."""
-    def _tex_to_base64(self, tex, math_mode):
+    def _latex_to_base64(self, tex, math_mode):
         """Generates a base64 representation of TeX string"""
         # Generate the temporary file
-    	tempfile.tempdir = "./"
+    	tempfile.tempdir = ""
         path = tempfile.mktemp()
         tmp_file = open(path, "w")
-        tmp_file.write(tex_preamble)
-
+        tmp_file.write(self.tex_preamble)
 
         # Figure out the mode that we're in
         if math_mode:
@@ -99,8 +109,8 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
 
     def _cleanup(self, path, err=False):
         # don't clean up the log if there's an error
-        if err: extensions = ["", ".aux", ".dvi", ".png"]
-        else: extensions = ["", ".log", ".aux", ".dvi", ".png"]
+        extensions = ["", ".aux", ".dvi", ".png", ".log"]
+        if err: extensions.pop()
 
         # now do the actual cleanup, passing on non-existent files
         for extension in extensions:
@@ -111,14 +121,13 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         """Parses the actual page"""
         # Re-creates the entire page so we can parse in a multine env.
         page = "\n".join(lines)
-        global tex_preamble
 
         # Adds a preamble mode
         preambles = PREAMBLE_MODE.findall(page)
         for preamble in preambles:
-            tex_preamble += preamble + "\n"
+            self.tex_preamble += preamble + "\n"
             page = PREAMBLE_MODE.sub("", page, 1)
-        tex_preamble += "\\begin{document}"
+        self.tex_preamble += "\\begin{document}"
 
         # Figure out our text strings and math-mode strings
         tex_expr = [(TEX_MODE, False, x) for x in TEX_MODE.findall(page)]
@@ -128,14 +137,14 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         new_cache = {}
         for reg, math_mode, expr in tex_expr:
             simp_expr = filter(unicode.isalnum, expr)
-            if simp_expr in cached:
-                data = cached[simp_expr]
+            if simp_expr in self.cached:
+                data = self.cached[simp_expr]
             else:
-                data = self._tex_to_base64(expr, math_mode)
+                data = self._latex_to_base64(expr, math_mode)
                 new_cache[simp_expr] = data
             expr = expr.replace('"', "").replace("'", "")
             page = reg.sub(IMG_EXPR %
-                    (str(math_mode).lower(), re.escape(expr), 
+                    (str(math_mode).lower(), simp_expr,
                         simp_expr[:15], data), page, 1)
 
         # Cache our data
@@ -149,18 +158,12 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
 
 
 class MarkdownLatex(markdown.Extension):
-    """Wrapper for TeXPreprocessor"""
+    """Wrapper for LaTeXPreprocessor"""
     def extendMarkdown(self, md, md_globals):
-        md.preprocessors.add('latex', TeXPreprocessor(self), ">html_block")
+        #self.config['preamble_template'] = 
+        md.preprocessors.add('latex', LaTeXPreprocessor(self), ">html_block")
 
 
 def makeExtension(configs=None):
     """Wrapper for a MarkDown extension"""
-    try:
-        cache_file = open('latex.cache', 'r+')
-        for line in cache_file.readlines():
-            key, val = line.strip("\n").split(" ")
-            cached[key] = val
-    except IOError:
-        pass
     return MarkdownLatex(configs=configs)

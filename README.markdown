@@ -1,5 +1,6 @@
 # Markdown-LaTeX
-This [Markdown](http://daringfireball.net/projects/markdown/) extension adds support for inline LaTeX expressions.
+This [Markdown](http://daringfireball.net/projects/markdown/) extension adds support for inline LaTeX expressions without the need for external images.
+The available modes are %TEXT%, $MATH$, and %%PREAMBLE%%.
 
 ## Modes
 Markdown-LaTeX can technically allow for any sort of LaTeX expression, but there are three main modes that make writing everything much easier.
@@ -29,7 +30,7 @@ You can either copy it into the extensions sub-directory in your markdown folder
 ----
 
 ## How does it work?
-The LaTex extension will search for either $text$ or %text% expressions. For each expression, it generates a tex file that is parsed by latex and then run through dvipng. The data is encoded via base64 and then inlined.  A cache file (latex.cache) is used to store all expressions and their base64 counterparts. This is to prevent latex from being run each time.
+The LaTeX extension will search for either $text$ or %text% expressions. For each expression, it generates a tex file that is parsed by latex and then run through dvipng. The data is encoded via base64 and then inlined.  A cache file (latex.cache) is used to store all expressions and their base64 counterparts. This is to prevent latex from being run each time.
 
 ----
 
