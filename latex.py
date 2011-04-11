@@ -65,7 +65,7 @@ class TeXPreprocessor(markdown.preprocessors.Preprocessor):
         tmp_file.close()
 
         # compile LaTeX document. A DVI file is created
-        status = call(('latex -no-halt-on-error %s' % path).split(), stdout=PIPE)
+        status = call(('latex -halt-on-error %s' % path).split(), stdout=PIPE)
         
         # clean up if the above failed
         if status:
