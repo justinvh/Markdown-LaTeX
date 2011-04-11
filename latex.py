@@ -4,7 +4,7 @@ Copyright (c) 2011 Justin Bruce Van Horne
 Python-Markdown LaTeX Extension
 ===============================
 
-A LaTeX extension for Python-Markdown. 
+/bin/bash: :28: command not found
 Adds support for $math mode$ and %text mode%. This plugin supports
 multiline equations/text.
 
@@ -24,10 +24,19 @@ import markdown
 from subprocess import call, PIPE
 
 
-# Our various mode flavors
-TEX_MODE = re.compile(r'(?=(?<!\\)\%).(.+?)(?<!\\)\%', re.MULTILINE | re.DOTALL)
-MATH_MODE = re.compile(r'(?=(?<!\\)\$).(.+?)(?<!\\)\$', re.MULTILINE | re.DOTALL)
-PREAMBLE_MODE = re.compile(r'(?=(?<!\\)\%\%).(.+?)(?<!\\)\%\%', re.MULTILINE | re.DOTALL)
+# %TEXT% mode which is the default LaTeX mode.
+TEX_MODE = re.compile(r'(?=(?<!\\)\%).(.+?)(?<!\\)\%',
+        re.MULTILINE | re.DOTALL)
+
+# $MATH$ mode which is the typical LaTeX math mode.
+MATH_MODE = re.compile(r'(?=(?<!\\)\$).(.+?)(?<!\\)\$',
+        re.MULTILINE | re.DOTALL)
+
+# %%PREAMBLE%% text that modifys the LaTeX preamble for the document
+PREAMBLE_MODE = re.compile(r'(?=(?<!\\)\%\%).(.+?)(?<!\\)\%\%',
+        re.MULTILINE | re.DOTALL)
+
+# Defines our basic inline image
 IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
         " src='data:image/png;base64,%s'>"
 
@@ -60,7 +69,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
     def _latex_to_base64(self, tex, math_mode):
         """Generates a base64 representation of TeX string"""
         # Generate the temporary file
-    	tempfile.tempdir = ""
+        tempfile.tempdir = ""
         path = tempfile.mktemp()
         tmp_file = open(path, "w")
         tmp_file.write(self.tex_preamble)
@@ -76,11 +85,12 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
 
         # compile LaTeX document. A DVI file is created
         status = call(('latex -halt-on-error %s' % path).split(), stdout=PIPE)
-        
+
         # clean up if the above failed
         if status:
             self._cleanup(path, err=True)
-            raise Exception("Couldn't compile LaTeX document. Please read '%s.log' for more detail." % path)
+            raise Exception("Couldn't compile LaTeX document." +
+                "Please read '%s.log' for more detail." % path)
 
         # Run dvipng on the generated DVI file. Use tight bounding box.
         # Magnification is set to 1200
@@ -95,7 +105,8 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         # clean up if we couldn't make the above work
         if status:
             self._cleanup(path, err=True)
-            raise Exception("Couldn't convert LaTeX to image. Please read '%s.log' for more detail." % path)
+            raise Exception("Couldn't convert LaTeX to image." +
+                    "Please read '%s.log' for more detail." % path)
 
         # Read the png and encode the data
         png = open(png, "rb")
@@ -103,19 +114,22 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         data = base64.b64encode(data)
         png.close()
 
-    	self._cleanup(path)
+        self._cleanup(path)
 
         return data
 
     def _cleanup(self, path, err=False):
         # don't clean up the log if there's an error
         extensions = ["", ".aux", ".dvi", ".png", ".log"]
-        if err: extensions.pop()
+        if err:
+            extensions.pop()
 
         # now do the actual cleanup, passing on non-existent files
         for extension in extensions:
-            try: os.remove("%s%s" % (path, extension))
-            except (IOError, OSError): pass
+            try:
+                os.remove("%s%s" % (path, extension))
+            except (IOError, OSError):
+                pass
 
     def run(self, lines):
         """Parses the actual page"""
@@ -160,7 +174,6 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
 class MarkdownLatex(markdown.Extension):
     """Wrapper for LaTeXPreprocessor"""
     def extendMarkdown(self, md, md_globals):
-        #self.config['preamble_template'] = 
         md.preprocessors.add('latex', LaTeXPreprocessor(self), ">html_block")
 
 
