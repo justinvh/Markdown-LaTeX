@@ -40,6 +40,10 @@ IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
         " src='data:image/png;base64,%s'>"
 
 
+# Base CSS template
+IMG_CSS = "<style>img.latex-inline { vertical-align: middle; }</style>"
+
+
 class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
     # These are our cached expressions that are stored in latex.cache
     cached = {}
@@ -146,9 +150,12 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         tex_expr = [(TEX_MODE, False, x) for x in TEX_MODE.findall(page)]
         tex_expr += [(MATH_MODE, True, x) for x in MATH_MODE.findall(page)]
 
-        if len(tex_expr) > 0:
-            page = '<style>img.latex-inline { vertical-align: middle; }</style>' + page
+        # No sense in doing the extra work
+        if len(tex_expr) < 0:
+            return page.split("\n")
 
+        # Inline a style for default behavior
+        page = IMG_CSS + page
 
         # Parse the expressions
         new_cache = {}
