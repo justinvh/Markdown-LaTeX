@@ -151,7 +151,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         tex_expr += [(MATH_MODE, True, x) for x in MATH_MODE.findall(page)]
 
         # No sense in doing the extra work
-        if len(tex_expr) < 0:
+        if len(tex_expr) <= 0:
             return page.split("\n")
 
         # Inline a style for default behavior
