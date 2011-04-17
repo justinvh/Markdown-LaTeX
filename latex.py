@@ -146,6 +146,10 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         tex_expr = [(TEX_MODE, False, x) for x in TEX_MODE.findall(page)]
         tex_expr += [(MATH_MODE, True, x) for x in MATH_MODE.findall(page)]
 
+        if len(tex_expr) > 0:
+            page = '<style>img.latex-inline { vertical-align: middle; }</style>' + page
+
+
         # Parse the expressions
         new_cache = {}
         for reg, math_mode, expr in tex_expr:

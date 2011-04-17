@@ -34,5 +34,6 @@ The LaTeX extension will search for either $text$ or %text% expressions. For eac
 
 ----
 
-## Thanks to:
+## Suggestions/Improvements:
 - [Geremy Condra](https://github.com/debatem1)
+- [Jabba Laci](https://github.com/jabbalaci)
