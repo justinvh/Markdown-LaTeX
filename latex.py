@@ -41,7 +41,7 @@ IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
 
 
 # Base CSS template
-IMG_CSS = "<style>img.latex-inline { vertical-align: middle; }</style>"
+IMG_CSS = "<style>img.latex-inline { vertical-align: middle; }</style>\n"
 
 
 class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
@@ -49,14 +49,14 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
     cached = {}
 
     # Basic LaTex Setup as well as our list of expressions to parse
-    tex_preamble = r""" \documentclass{article}
-                        \usepackage{amsmath}
-                        \usepackage{amsthm}
-                        \usepackage{amssymb}
-                        \usepackage{bm}
-                        \usepackage[usenames,dvipsnames]{color}
-                        \pagestyle{empty}
-                    """
+    tex_preamble = r"""\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage[usenames,dvipsnames]{color}
+\pagestyle{empty}
+"""
 
     def __init__(self, configs):
         try:
@@ -83,7 +83,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         else:
             tmp_file.write("%s" % tex)
 
-        tmp_file.write('\end{document}')
+        tmp_file.write('\n\end{document}')
         tmp_file.close()
 
         # compile LaTeX document. A DVI file is created
@@ -101,7 +101,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         png = "%s.png" % path
 
         # Extract the image
-        cmd = "dvipng -T tight -x 1200 -z 9 \
+        cmd = "dvipng -q -T tight -x 1200 -z 9 \
                 %s -o %s" % (dvi, png)
         status = call(cmd.split(), stdout=PIPE)
 
@@ -144,18 +144,15 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         for preamble in preambles:
             self.tex_preamble += preamble + "\n"
             page = PREAMBLE_MODE.sub("", page, 1)
-        self.tex_preamble += "\\begin{document}"
+        self.tex_preamble += "\n\\begin{document}\n"
 
         # Figure out our text strings and math-mode strings
         tex_expr = [(TEX_MODE, False, x) for x in TEX_MODE.findall(page)]
         tex_expr += [(MATH_MODE, True, x) for x in MATH_MODE.findall(page)]
 
         # No sense in doing the extra work
-        if len(tex_expr) <= 0:
+        if not len(tex_expr):
             return page.split("\n")
-
-        # Inline a style for default behavior
-        page = IMG_CSS + page
 
         # Parse the expressions
         new_cache = {}
@@ -181,10 +178,19 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         return page.split("\n")
 
 
+class LaTeXPostprocessor(markdown.postprocessors.Postprocessor):
+        """This post processor extension just allows us to further
+        refine, if necessary, the document after it has been parsed."""
+        def run(self, text):
+            # Inline a style for default behavior
+            return IMG_CSS + text;
+
+
 class MarkdownLatex(markdown.Extension):
     """Wrapper for LaTeXPreprocessor"""
     def extendMarkdown(self, md, md_globals):
         md.preprocessors.add('latex', LaTeXPreprocessor(self), ">html_block")
+        md.postprocessors.add('latex', LaTeXPostprocessor(self), ">amp_substitute")
 
 
 def makeExtension(configs=None):
