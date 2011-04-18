@@ -183,14 +183,19 @@ class LaTeXPostprocessor(markdown.postprocessors.Postprocessor):
         refine, if necessary, the document after it has been parsed."""
         def run(self, text):
             # Inline a style for default behavior
-            return IMG_CSS + text;
+            text = IMG_CSS + text
+            return text
 
 
 class MarkdownLatex(markdown.Extension):
     """Wrapper for LaTeXPreprocessor"""
     def extendMarkdown(self, md, md_globals):
-        md.preprocessors.add('latex', LaTeXPreprocessor(self), ">html_block")
-        md.postprocessors.add('latex', LaTeXPostprocessor(self), ">amp_substitute")
+        # Our base LaTeX extension
+        md.preprocessors.add('latex',
+                LaTeXPreprocessor(self), ">html_block")
+        # Our cleanup postprocessing extension
+        md.postprocessors.add('latex',
+                LaTeXPostprocessor(self), ">amp_substitute")
 
 
 def makeExtension(configs=None):
