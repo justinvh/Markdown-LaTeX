@@ -1,8 +1,12 @@
 """
-Copyright (c) 2011 Justin Bruce Van Horne
+Licensed under Public Domain Mark 1.0. 
+See http://creativecommons.org/publicdomain/mark/1.0/
+Author: Justin Bruce Van Horne <justinvh@gmail.com>
+"""
 
+
+"""
 Python-Markdown LaTeX Extension
-===============================
 
 Adds support for $math mode$ and %text mode%. This plugin supports
 multiline equations/text.
