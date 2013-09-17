@@ -28,15 +28,15 @@ from subprocess import call, PIPE
 
 
 # %TEXT% mode which is the default LaTeX mode.
-TEX_MODE = re.compile(r'(?=(?<!\\)\%).(.+?)(?<!\\)\%',
+TEX_MODE = re.compile(r'(?<!\\)\%(.+?)(?<!\\)\%',
         re.MULTILINE | re.DOTALL)
 
 # $MATH$ mode which is the typical LaTeX math mode.
-MATH_MODE = re.compile(r'(?=(?<!\\)\$).(.+?)(?<!\\)\$',
+MATH_MODE = re.compile(r'(?<!\\)\$(.+?)(?<!\\)\$',
         re.MULTILINE | re.DOTALL)
 
 # %%PREAMBLE%% text that modifys the LaTeX preamble for the document
-PREAMBLE_MODE = re.compile(r'(?=(?<!\\)\%\%).(.+?)(?<!\\)\%\%',
+PREAMBLE_MODE = re.compile(r'(?<!\\)\%\%(.+?)(?<!\\)\%\%',
         re.MULTILINE | re.DOTALL)
 
 # Defines our basic inline image
