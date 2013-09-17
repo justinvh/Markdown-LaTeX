@@ -172,6 +172,12 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
                     (str(math_mode).lower(), simp_expr,
                         simp_expr[:15], data), page, 1)
 
+        # Perform the escaping of delimiters and escape per se
+        page = page.replace('\\%%', '%%')
+        page = page.replace('\\%', '%')
+        page = page.replace('\\$', '$')
+        page = page.replace('\\\\', '\\')
+
         # Cache our data
         cache_file = open('latex.cache', 'a')
         for key, value in new_cache.items():
