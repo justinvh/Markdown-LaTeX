@@ -71,6 +71,20 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         except IOError:
             pass
 
+        self.config = {}
+        self.config[("dvipng", "args")] = "-q -T tight -bg Transparent -z 9 -D 106"
+
+        try:
+            import ConfigParser
+            cfgfile = ConfigParser.RawConfigParser()
+            cfgfile.read('markdown-latex.cfg')
+
+            for sec in cfgfile.sections():
+                for opt in cfgfile.options(sec):
+                    self.config[(sec, opt)] = cfgfile.get(sec, opt)
+        except ConfigParser.NoSectionError:
+            pass
+
     """The TeX preprocessor has to run prior to all the actual processing
     and can not be parsed in block mode very sanely."""
     def _latex_to_base64(self, tex, math_mode):
@@ -105,8 +119,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         png = "%s.png" % path
 
         # Extract the image
-        cmd = "dvipng -q -T tight -bg Transparent -D 106 -z 9 \
-                %s -o %s" % (dvi, png)
+        cmd = "dvipng %s %s -o %s" % (self.config[("dvipng", "args")], dvi, png)
         status = call(cmd.split(), stdout=PIPE)
 
         # clean up if we couldn't make the above work
