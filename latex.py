@@ -105,7 +105,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         png = "%s.png" % path
 
         # Extract the image
-        cmd = "dvipng -q -T tight -bg Transparent -x 1200 -z 9 \
+        cmd = "dvipng -q -T tight -bg Transparent -D 106 -z 9 \
                 %s -o %s" % (dvi, png)
         status = call(cmd.split(), stdout=PIPE)
 
