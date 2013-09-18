@@ -27,18 +27,6 @@ import markdown
 from subprocess import call, PIPE
 
 
-# %TEXT% mode which is the default LaTeX mode.
-TEX_MODE = re.compile(r'(?<!\\)\%(.+?)(?<!\\)\%',
-        re.MULTILINE | re.DOTALL)
-
-# $MATH$ mode which is the typical LaTeX math mode.
-MATH_MODE = re.compile(r'(?<!\\)\$(.+?)(?<!\\)\$',
-        re.MULTILINE | re.DOTALL)
-
-# %%PREAMBLE%% text that modifys the LaTeX preamble for the document
-PREAMBLE_MODE = re.compile(r'(?<!\\)\%\%(.+?)(?<!\\)\%\%',
-        re.MULTILINE | re.DOTALL)
-
 # Defines our basic inline image
 IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
         " src='data:image/png;base64,%s'>"
@@ -73,6 +61,9 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
 
         self.config = {}
         self.config[("dvipng", "args")] = "-q -T tight -bg Transparent -z 9 -D 106"
+        self.config[("delimiters", "text")] = "%"
+        self.config[("delimiters", "math")] = "$"
+        self.config[("delimiters", "preamble")] = "%%"
 
         try:
             import ConfigParser
@@ -84,6 +75,18 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
                     self.config[(sec, opt)] = cfgfile.get(sec, opt)
         except ConfigParser.NoSectionError:
             pass
+
+        def build_regexp(delim):
+            delim = re.escape(delim)
+            regexp = r'(?<!\\)' + delim + r'(.+?)(?<!\\)' + delim
+            return re.compile(regexp, re.MULTILINE | re.DOTALL)
+
+        # %TEXT% mode which is the default LaTeX mode.
+        self.re_textmode = build_regexp(self.config[("delimiters", "text")])
+        # $MATH$ mode which is the typical LaTeX math mode.
+        self.re_mathmode = build_regexp(self.config[("delimiters", "math")])
+        # %%PREAMBLE%% text that modifys the LaTeX preamble for the document
+        self.re_preamblemode = build_regexp(self.config[("delimiters", "preamble")])
 
     """The TeX preprocessor has to run prior to all the actual processing
     and can not be parsed in block mode very sanely."""
@@ -157,15 +160,15 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         page = "\n".join(lines)
 
         # Adds a preamble mode
-        preambles = PREAMBLE_MODE.findall(page)
+        preambles = self.re_preamblemode.findall(page)
         for preamble in preambles:
             self.tex_preamble += preamble + "\n"
-            page = PREAMBLE_MODE.sub("", page, 1)
+            page = self.re_preamblemode.sub("", page, 1)
         self.tex_preamble += "\n\\begin{document}\n"
 
         # Figure out our text strings and math-mode strings
-        tex_expr = [(TEX_MODE, False, x) for x in TEX_MODE.findall(page)]
-        tex_expr += [(MATH_MODE, True, x) for x in MATH_MODE.findall(page)]
+        tex_expr = [(self.re_textmode, False, x) for x in self.re_textmode.findall(page)]
+        tex_expr += [(self.re_mathmode, True, x) for x in self.re_mathmode.findall(page)]
 
         # No sense in doing the extra work
         if not len(tex_expr):
@@ -185,11 +188,14 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
                     (str(math_mode).lower(), simp_expr,
                         simp_expr[:15], data), page, 1)
 
-        # Perform the escaping of delimiters and escape per se
-        page = page.replace('\\%%', '%%')
-        page = page.replace('\\%', '%')
-        page = page.replace('\\$', '$')
-        page = page.replace('\\\\', '\\')
+        # Perform the escaping of delimiters and the backslash per se
+        tokens = []
+        tokens += [self.config[("delimiters", "preamble")]]
+        tokens += [self.config[("delimiters", "text")]]
+        tokens += [self.config[("delimiters", "math")]]
+        tokens += ['\\']
+        for tok in tokens:
+            page = page.replace('\\' + tok, tok)
 
         # Cache our data
         cache_file = open('latex.cache', 'a')
