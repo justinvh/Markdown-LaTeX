@@ -60,6 +60,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
             pass
 
         self.config = {}
+        self.config[("general", "preamble")] = ""
         self.config[("dvipng", "args")] = "-q -T tight -bg Transparent -z 9 -D 106"
         self.config[("delimiters", "text")] = "%"
         self.config[("delimiters", "math")] = "$"
@@ -160,6 +161,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         page = "\n".join(lines)
 
         # Adds a preamble mode
+        self.tex_preamble += self.config[("general", "preamble")]
         preambles = self.re_preamblemode.findall(page)
         for preamble in preambles:
             self.tex_preamble += preamble + "\n"
