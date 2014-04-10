@@ -178,6 +178,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
 
         # Parse the expressions
         new_cache = {}
+        id = 0
         for reg, math_mode, expr in tex_expr:
             simp_expr = filter(unicode.isalnum, expr)
             if simp_expr in self.cached:
@@ -186,9 +187,10 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
                 data = self._latex_to_base64(expr, math_mode)
                 new_cache[simp_expr] = data
             expr = expr.replace('"', "").replace("'", "")
+            id += 1
             page = reg.sub(IMG_EXPR %
                     (str(math_mode).lower(), simp_expr,
-                        simp_expr[:15], data), page, 1)
+                        simp_expr[:15] + "_" + str(id), data), page, 1)
 
         # Perform the escaping of delimiters and the backslash per se
         tokens = []
