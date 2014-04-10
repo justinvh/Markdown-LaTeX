@@ -33,7 +33,7 @@ IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
 
 
 # Base CSS template
-IMG_CSS = "<style>img.latex-inline { vertical-align: middle; }</style>\n"
+IMG_CSS = "<style scoped>img.latex-inline { vertical-align: middle; }</style>\n"
 
 
 class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
