@@ -33,7 +33,7 @@ IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
 
 
 # Base CSS template
-IMG_CSS = "<style>img.latex-inline { vertical-align: middle; }</style>\n"
+IMG_CSS = "<style scoped>img.latex-inline { vertical-align: middle; }</style>\n"
 
 
 class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
@@ -60,6 +60,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
             pass
 
         self.config = {}
+        self.config[("general", "preamble")] = ""
         self.config[("dvipng", "args")] = "-q -T tight -bg Transparent -z 9 -D 106"
         self.config[("delimiters", "text")] = "%"
         self.config[("delimiters", "math")] = "$"
@@ -160,6 +161,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         page = "\n".join(lines)
 
         # Adds a preamble mode
+        self.tex_preamble += self.config[("general", "preamble")]
         preambles = self.re_preamblemode.findall(page)
         for preamble in preambles:
             self.tex_preamble += preamble + "\n"
@@ -176,6 +178,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
 
         # Parse the expressions
         new_cache = {}
+        id = 0
         for reg, math_mode, expr in tex_expr:
             simp_expr = filter(unicode.isalnum, expr)
             if simp_expr in self.cached:
@@ -184,9 +187,10 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
                 data = self._latex_to_base64(expr, math_mode)
                 new_cache[simp_expr] = data
             expr = expr.replace('"', "").replace("'", "")
+            id += 1
             page = reg.sub(IMG_EXPR %
                     (str(math_mode).lower(), simp_expr,
-                        simp_expr[:15], data), page, 1)
+                        simp_expr[:15] + "_" + str(id), data), page, 1)
 
         # Perform the escaping of delimiters and the backslash per se
         tokens = []
