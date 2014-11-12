@@ -95,8 +95,8 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         """Generates a base64 representation of TeX string"""
         # Generate the temporary file
         tempfile.tempdir = ""
-        path = tempfile.mktemp()
-        tmp_file = open(path, "w")
+        tmp_file_fd, path = tempfile.mkstemp()
+        tmp_file = os.fdopen(tmp_file_fd, "w")
         tmp_file.write(self.tex_preamble)
 
         # Figure out the mode that we're in
