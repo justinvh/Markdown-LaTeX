@@ -27,6 +27,9 @@ import markdown
 from subprocess import call, PIPE
 
 
+def isalnum(expr):
+	return expr.isalnum()
+
 # Defines our basic inline image
 IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
         " src='data:image/png;base64,%s'>"
@@ -35,6 +38,10 @@ IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
 # Base CSS template
 IMG_CSS = "<style scoped>img.latex-inline { vertical-align: middle; }</style>\n"
 
+
+# Cache and temp file paths
+_TEMPDIR = tempfile.gettempdir() + '/markdown-latex'
+_CACHEFILE = _TEMPDIR + '/latex.cache'
 
 class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
     # These are our cached expressions that are stored in latex.cache
@@ -51,8 +58,10 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
 """
 
     def __init__(self, configs):
+        if not os.path.isdir(_TEMPDIR):
+            os.makedirs(_TEMPDIR)
         try:
-            cache_file = open('latex.cache', 'r+')
+            cache_file = open(_CACHEFILE, 'r+')
             for line in cache_file.readlines():
                 key, val = line.strip("\n").split(" ")
                 self.cached[key] = val
@@ -67,7 +76,10 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         self.config[("delimiters", "preamble")] = "%%"
 
         try:
-            import ConfigParser
+            try:
+            	import ConfigParser
+            except ImportError:
+            	import configparser as ConfigParser
             cfgfile = ConfigParser.RawConfigParser()
             cfgfile.read('markdown-latex.cfg')
 
@@ -94,7 +106,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
     def _latex_to_base64(self, tex, math_mode):
         """Generates a base64 representation of TeX string"""
         # Generate the temporary file
-        tempfile.tempdir = ""
+        tempfile.tempdir = _TEMPDIR
         tmp_file_fd, path = tempfile.mkstemp()
         tmp_file = os.fdopen(tmp_file_fd, "w")
         tmp_file.write(self.tex_preamble)
@@ -109,7 +121,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         tmp_file.close()
 
         # compile LaTeX document. A DVI file is created
-        status = call(('latex -halt-on-error %s' % path).split(), stdout=PIPE)
+        status = call(('latex -halt-on-error -output-directory={:s} {:s}'.format(_TEMPDIR, path)).split(), stdout=PIPE, timeout=10)
 
         # clean up if the above failed
         if status:
@@ -180,11 +192,11 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         new_cache = {}
         id = 0
         for reg, math_mode, expr in tex_expr:
-            simp_expr = filter(unicode.isalnum, expr)
+            simp_expr = ''.join(list(filter(isalnum, expr)))
             if simp_expr in self.cached:
                 data = self.cached[simp_expr]
             else:
-                data = self._latex_to_base64(expr, math_mode)
+                data = self._latex_to_base64(expr, math_mode).decode()
                 new_cache[simp_expr] = data
             expr = expr.replace('"', "").replace("'", "")
             id += 1
@@ -202,7 +214,7 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
             page = page.replace('\\' + tok, tok)
 
         # Cache our data
-        cache_file = open('latex.cache', 'a')
+        cache_file = open(_CACHEFILE, 'a')
         for key, value in new_cache.items():
             cache_file.write("%s %s\n" % (key, value))
         cache_file.close()
