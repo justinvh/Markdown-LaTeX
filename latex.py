@@ -28,6 +28,7 @@ from subprocess import call, PIPE
 
 
 def isalnum(expr):
+	'''Proxy to expr.isalnum() that can be used by filter()'''
 	return expr.isalnum()
 
 # Defines our basic inline image
