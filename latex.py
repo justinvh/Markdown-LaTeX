@@ -16,6 +16,7 @@ It encodes data as base64 so there is no need for images directly.
 All the work is done in the preprocessor.
 """
 
+from sys import version
 import re
 import os
 import string
@@ -24,12 +25,26 @@ import tempfile
 import markdown
 
 
-from subprocess import call, PIPE
+from subprocess import call as rawcall, PIPE
 
 
+
+# Proxies to existing functions for conserving compatibility between
+# Python2 and Python3
 def isalnum(expr):
 	'''Proxy to expr.isalnum() that can be used by filter()'''
 	return expr.isalnum()
+
+def call(*args, **kwargs):
+    '''
+    Proxy to subprocess.call(), removes timeout argument in case of
+    Python2 because that was only implemented in Python3.
+    '''
+    if 'timeout' in kwargs and version[0] == '2':
+        del kwargs['timeout']
+    rawcall(*args, **kwargs)
+
+
 
 # Defines our basic inline image
 IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
@@ -37,7 +52,8 @@ IMG_EXPR = "<img class='latex-inline math-%s' alt='%s' id='%s'" + \
 
 
 # Base CSS template
-IMG_CSS = "<style scoped>img.latex-inline { vertical-align: middle; }</style>\n"
+IMG_CSS = \
+        "<style scoped>img.latex-inline { vertical-align: middle; }</style>\n"
 
 
 # Cache and temp file paths
@@ -69,25 +85,28 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         except IOError:
             pass
 
-        self.config = {}
-        self.config[("general", "preamble")] = ""
-        self.config[("dvipng", "args")] = "-q -T tight -bg Transparent -z 9 -D 106"
-        self.config[("delimiters", "text")] = "%"
-        self.config[("delimiters", "math")] = "$"
-        self.config[("delimiters", "preamble")] = "%%"
+        self.config = {
+            ("general", "preamble"): "",
+            ("dvipng", "args"): "-q -T tight -bg Transparent -z 9 -D 106",
+            ("delimiters", "text"): "%",
+            ("delimiters", "math"): "$",
+            ("delimiters", "preamble"): "%%" }
 
         try:
+            # ConfigParser was renamed to configparser in Python3.
+            # Import it in a way that works across versions,
+            # using the Python3 naming convention in the rest of the code.
             try:
-            	import ConfigParser
+            	import configparser
             except ImportError:
-            	import configparser as ConfigParser
-            cfgfile = ConfigParser.RawConfigParser()
+            	import ConfigParser as configparser
+            cfgfile = configparser.RawConfigParser()
             cfgfile.read('markdown-latex.cfg')
 
             for sec in cfgfile.sections():
                 for opt in cfgfile.options(sec):
                     self.config[(sec, opt)] = cfgfile.get(sec, opt)
-        except ConfigParser.NoSectionError:
+        except configparser.NoSectionError:
             pass
 
         def build_regexp(delim):
@@ -121,7 +140,9 @@ class LaTeXPreprocessor(markdown.preprocessors.Preprocessor):
         tmp_file.close()
 
         # compile LaTeX document. A DVI file is created
-        status = call(('latex -halt-on-error -output-directory={:s} {:s}'.format(_TEMPDIR, path)).split(), stdout=PIPE, timeout=10)
+        status = call(('latex -halt-on-error -output-directory={:s} {:s}'
+                .format(_TEMPDIR, path)).split(),
+                stdout=PIPE, timeout=10)
 
         # clean up if the above failed
         if status:
